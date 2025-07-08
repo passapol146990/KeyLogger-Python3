@@ -4,6 +4,7 @@ server/KeyLoggerAgent.txt
 client/key_log.txt
 
 __pycache__/
+*/__pycache__/
 *.py[codz]
 *$py.class
 

