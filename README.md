@@ -12,7 +12,7 @@ python3 -m venv ./venv
 
 source .venv/bin/activate
 
-python install -r requirement.txt
+pip install -r requirement.txt
 
 ip a
 ---- set server ip port 8000 ----
